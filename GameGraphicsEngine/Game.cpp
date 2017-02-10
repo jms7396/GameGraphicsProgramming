@@ -59,6 +59,15 @@ Game::~Game()
 	if (mat1) { delete (mat1); }
 	if (mat2) { delete (mat2); }
 
+	// Release Particles
+	particleTexture->Release();
+	particleBlendState->Release();
+	particleDepthState->Release();
+
+	delete particleVS;
+	delete particlePS;
+	delete emitter;
+
 	// Release textures and sampler
 	sampler->Release();
 	rockSRV->Release();
@@ -87,6 +96,44 @@ void Game::Init()
 
 	// Device create sampler state
 	device->CreateSamplerState(&samplerDesc, &sampler);
+
+	// Depth State for particles
+	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+	dsDesc.DepthEnable = true;
+	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Turns off depth writing
+	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	device->CreateDepthStencilState(&dsDesc, &particleDepthState);
+
+	// Blend for Particles (additive)
+	D3D11_BLEND_DESC blend = {};
+	blend.AlphaToCoverageEnable = false;
+	blend.IndependentBlendEnable = false;
+	blend.RenderTarget[0].BlendEnable = true;
+	blend.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blend.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blend.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	device->CreateBlendState(&blend, &particleBlendState);
+
+	// Set Up Particles
+	emitter = new Emitter(
+		1000,								// Max Particles
+		100,								// Particles per second
+		5,									// Particle lifetime
+		0.1f,								// Start size
+		5.0f,								// End size
+		XMFLOAT4(1, 0.1f, 0.1f, 0.2f),		// Start color
+		XMFLOAT4(1, 0.6f, 0.1f, 0),			// End color
+		XMFLOAT3(-2, 2, 0),					// Start velocity
+		XMFLOAT3(2, 0, 0),					// Start position
+		XMFLOAT3(0, -1, 0),					// Start acceleration
+		device,
+		particleVS,
+		particlePS,
+		particleTexture);
 
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
@@ -129,6 +176,14 @@ void Game::LoadShaders()
 	pixelShader = new SimplePixelShader(device, context);
 	if(!pixelShader->LoadShaderFile(L"Debug/PixelShader.cso"))	
 		pixelShader->LoadShaderFile(L"PixelShader.cso");
+
+	particleVS = new SimpleVertexShader(device, context);
+	if (!particleVS->LoadShaderFile(L"Debug/ParticleVS.cso"))
+		particleVS->LoadShaderFile(L"ParticleVS.cso");
+
+	particlePS = new SimplePixelShader(device, context);
+	if (!particlePS->LoadShaderFile(L"Debug/ParticlePS.cso"))
+		particlePS->LoadShaderFile(L"ParticlePS.cso");
 
 	pixelShader->SetSamplerState("Sampler", sampler);
 	pixelShader->SetShaderResourceView("Rocks", rockSRV);
@@ -215,6 +270,8 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	emitter->Update(deltaTime);
+
 	entityOne->SetRotation(XMFLOAT3(entityOne->GetRotation().x, entityOne->GetRotation().y + 0.0001, entityOne->GetRotation().z));
 	entityOne->FinalizeMatrix();
 
@@ -295,6 +352,18 @@ void Game::Draw(float deltaTime, float totalTime)
 		entityThree->GetMesh()->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
 		0,     // Offset to the first index we want to use
 		0);    // Offset to add to each index when looking up vertices
+
+	// Particle States
+	float blend[4] = { 1,1,1,1 };
+	context->OMSetBlendState(particleBlendState, blend, 0xffffffff);
+	context->OMSetDepthStencilState(particleDepthState, 0);
+
+	// Draw the emitter
+	emitter->Draw(context, gameCamera);
+
+	// Reset to default states for next frame
+	context->OMSetBlendState(0, blend, 0xffffffff);
+	context->OMSetDepthStencilState(0, 0);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

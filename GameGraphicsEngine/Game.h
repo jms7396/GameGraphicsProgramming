@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "Material.h"
 #include "Lights.h"
+#include "Emitter.h"
 #include "WICTextureLoader.h"
 
 class Game 
@@ -40,6 +41,19 @@ private:
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
+
+	// Texture Related DX
+	ID3D11ShaderResourceView* textureSRV;
+	ID3D11ShaderResourceView* normalMapSRV;
+	ID3D11SamplerState* sampler;
+
+	// Particles
+	ID3D11ShaderResourceView* particleTexture;
+	SimpleVertexShader* particleVS;
+	SimplePixelShader* particlePS;
+	ID3D11DepthStencilState* particleDepthState;
+	ID3D11BlendState* particleBlendState;
+	Emitter* emitter;
 
 	// The matrices to go from model space to screen space
 	DirectX::XMFLOAT4X4 worldMatrix;
@@ -74,6 +88,5 @@ private:
 	// Textures
 	ID3D11ShaderResourceView* rockSRV;
 	ID3D11ShaderResourceView* woodSRV;
-	ID3D11SamplerState* sampler;
 };
 
