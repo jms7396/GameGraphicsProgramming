@@ -1,0 +1,6 @@
+﻿  Emitter.cpp
+c:\users\james\desktop\school stuff\game graphics programming\gamegraphicsengine\camera.h(2): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+c:\users\james\desktop\school stuff\game graphics programming\gamegraphicsengine\camera.h(3): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+c:\users\james\desktop\school stuff\game graphics programming\gamegraphicsengine\camera.h(4): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  DX11Starter.vcxproj -> C:\Users\James\Desktop\School Stuff\Game Graphics Programming\GameGraphicsEngine\Debug\DX11Starter.exe
+  DX11Starter.vcxproj -> C:\Users\James\Desktop\School Stuff\Game Graphics Programming\GameGraphicsEngine\Debug\DX11Starter.pdb (Full PDB)
